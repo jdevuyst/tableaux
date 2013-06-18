@@ -16,5 +16,4 @@ Tableau systems are formal systems for constructing models that satisfy a given 
 
 In my dissertation (a work in progress) I describe tableau systems for various dynamic modal logic, including public announcement logics. These tableau systems have rules that closely mirror the 'dynamic' semantics of dynamic modal logics.
 
-A short and very technical abstract by me: http://jdevuyst.appspot.com/abstracts/2013/jdevuyst-dynamic_tableaux_PAL-unilog-abstract.pdf
-
+A short and very technical abstract by me: http://jdevuyst.appspot.com/abstracts/2013/jdevuyst-dynamic_tableaux_for_PAL-lics13-abstract.pdf
