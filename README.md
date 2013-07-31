@@ -30,11 +30,11 @@ A web-based front-end is targetted for September 2013.
 
 To get started, perform the following steps.
 
-1. Download the Java Development Kit (JDK) from java.com. Beware that downloading the Java Runtime Environment (JRE) will not suffice, as the JRE does not contain the Java compiler.
-2. Download Leiningen. This download includes the Clojure environment.
+1. Download the [Java Development Kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html). Beware that downloading the Java Runtime Environment (JRE) will not suffice, as the JRE does not contain the Java compiler.
+2. Download [Leiningen](http://leiningen.org). This download includes the Clojure environment.
 3. Go to the project root folder (the one containing project.clj) in your terminal.
 4. Run "lein repl".
 
-Next, to run the core tests, enter "(use 'tableaux.core-test)". These tests some well-known validities. See "test/tableaux/core-test.clj" for more information.
+Next, to run the core tests, enter "(use 'tableaux.core-test)". These tests some well-known validities. See "test/tableaux/core-test.clj" to inspect the tests.
 
 To perform your own tests, first enter "(use 'tableaux.core)" and then type "(explain form)", where form is a formula using the syntax also found in "test/tableaux/core-test.clj".
