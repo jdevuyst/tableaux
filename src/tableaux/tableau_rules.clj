@@ -1,7 +1,9 @@
 (ns tableaux.tableau-rules
   "Tableau rules. For information on how these work see my PhD thesis."
   (:require [clojure.core.reducers :as r]
+            [clojure.set :as set]
             [tableaux.rewrite :as rw]
+            [tableaux.util :as u]
             [tableaux.syntax :as syntax]))
 
 (defn rule-not-not
@@ -61,6 +63,53 @@
        #{[m]
          [idx n m]
          [m [:not form]]}))))
+
+(defn- fork-precond [forms nodes]
+  (->> nodes
+       (u/rjuxt (constantly forms))
+       (r/map (fn [[[n] form]] [[n form]
+                                [n [:not form]]]))
+       (r/fold (r/monoid conj hash-set))))
+
+(defn fork-rule-precond1
+  "Precondition rule, part 1. This function is triggered when a new,
+  positive, announcement formula is added."
+([] [:labels-by-prefix :!])
+([rs [n
+      [bang1 ann-form post-form]]]
+ (->> (rw/query rs [:by-arity 1])
+      (r/map (fn [[n]] [[n ann-form] [n [:not ann-form]]]))
+      (r/fold (r/monoid conj hash-set)))))
+
+(defn fork-rule-precond2
+  "Precondition rule, part 2. This function is triggered when a new,
+  negated, announcement formula is added."
+  ([] [:labels-by-prefix2 :not :!])
+  ([rs [n
+        [not1 [bang1 ann-form post-form]]]]
+ (->> (rw/query rs [:by-arity 1])
+      (r/map (fn [[n]] [[n ann-form] [n [:not ann-form]]]))
+      (r/fold (r/monoid conj hash-set)))))
+
+(defn fork-rule-precond3
+  "Precondition rule, part 3. This function is triggered when a new
+  node is added"
+([] [:by-arity 1])
+([rs [n]]
+ (->> (rw/query rs [:labels-by-prefix :!])
+      (r/map (fn [[x [ann1 ann-form post-form]]]
+               [[n ann-form] [n [:not ann-form]]]))
+      (r/fold (r/monoid conj hash-set)))))
+
+(defn fork-rule-precond4
+  "Precondition rule, part 4. This function is triggered when a new
+  node is added"
+([] [:by-arity 1])
+([rs [n]]
+ (->> (rw/query rs [:labels-by-prefix2 :not :!])
+      (r/map (fn [[x [not1 [ann1 ann-form post-form]]]]
+               [[n ann-form] [n [:not ann-form]]]))
+      (r/fold (r/monoid conj hash-set)))))
 
 (defn rule-T
   "Rule for reflexivity."

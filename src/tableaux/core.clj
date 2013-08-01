@@ -17,7 +17,7 @@
 
   Throws an IllegalArgumentException if the argument is not a
   well-formed formula."
-  [form]
+  [[start-node form]]
   (if (not (syntax/wff? form))
     (throw (IllegalArgumentException. (str "Not a wff: " form))))
   (loop [rss #{(-> (rw/rewriting-system [log/log-by-arity
@@ -26,7 +26,7 @@
                                          log/log-labels-by-node-prefix-infix
                                          log/log-edges-by-idx-src
                                          log/log-edges-by-idx-dest])
-                   (rw/post [[:start-node] [:start-node form]]))}]
+                   (rw/post [[start-node] [start-node form]]))}]
     (let [next-rss (->> rss
                         (r/map #(rw/process %
                                             rw/post
@@ -45,7 +45,11 @@
                         (r/map #(rw/process %
                                             (rw/disjunctify rw/post)
                                             :mark3
-                                            [tr/fork-rule-not-and]))
+                                            [tr/fork-rule-not-and
+                                             tr/fork-rule-precond1
+                                             tr/fork-rule-precond2
+                                             tr/fork-rule-precond3
+                                             tr/fork-rule-precond4]))
                         (r/fold (r/monoid into hash-set))
                         (r/fold (r/monoid conj hash-set)))]
       (if-not (empty? (->> next-rss
@@ -66,7 +70,7 @@
 (defn satisfiable?
   "Returns true iff there's a model for the given formula."
   [form]
-  (->> (construct-tableaux form)
+  (->> (construct-tableaux [:start-node form])
        (r/filter rs-consistent?)
        (r/fold (r/monoid (constantly true) (constantly false)))))
 
@@ -90,7 +94,7 @@
   report for human consumption."
   [form]
   (print (str "Constructing tableaux for " form "..."))
-  (let [open-tableaux (->> (construct-tableaux form)
+  (let [open-tableaux (->> (construct-tableaux [:start-node form])
                       (r/filter rs-consistent?)
                       (r/fold (r/monoid conj hash-set)))
         sat (not (empty? open-tableaux))

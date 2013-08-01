@@ -13,45 +13,45 @@
   posted items or logs cannot be deleted or modified.
 
   See rewriting-system for more information on loggers and logs."
-  (post [this coll] "Posts new elements to the rewriting system.
-                    This causes the loggers to create new logs.
+(post [this coll] "Posts new elements to the rewriting system.
+                  This causes the loggers to create new logs.
 
-                    Returns the rewriting system, ammended with the new
-                    logs")
-  (query [this k] "Returns the log (a set of items) filed under key k.")
-  (mark [this marker] "Inserts the given marker. This allows for those
-                      logts to be fetched that were inserted after the
-                      marker was recorded.
+                  Returns the rewriting system, ammended with the new
+                  logs")
+(query [this k] "Returns the log (a set of items) filed under key k.")
+(mark [this marker] "Inserts the given marker. This allows for those
+                    logts to be fetched that were inserted after the
+                    marker was recorded.
 
-                      Returns the rewriting system after inserting the
-                      marker.")
-  (since [this marker] "Returns the mmap containing those log items
-                       inserted after the given marker was recorded.")
-  (process [this f marker rules] "Applies the rules to the logs with key
-                                 k that were inserted after the given
-                                 marker.
+                    Returns the rewriting system after inserting the
+                    marker.")
+(since [this marker] "Returns the mmap containing those log items
+                     inserted after the given marker was recorded.")
+(process [this f marker rules] "Applies the rules to the logs with key
+                               k that were inserted after the given
+                               marker.
 
-                                 rules is a seq of functions that have
-                                 the following properties.
+                               rules is a seq of functions that have
+                               the following properties.
 
-                                 1. If called with no arguments a rule
-                                 returns a log key.
-                                 2. If called with two arguments (the
-                                 rewriting system and the log for the
-                                 above key) then the rule returns a
-                                 meaningful foldable collection.
+                               1. If called with no arguments a rule
+                               returns a log key.
+                               2. If called with two arguments (the
+                               rewriting system and the log for the
+                               above key) then the rule returns a
+                               meaningful foldable collection.
 
-                                 (For example, it may return a set of
-                                 new items to be posted to the
-                                 rewriting system.)
+                               (For example, it may return a set of
+                               new items to be posted to the
+                               rewriting system.)
 
-                                 Finally, process does the following:
-                                 1. Marks the rewriting system with the
-                                 given marker.
-                                 2. Computes the union of the
-                                 collections returned by the rules.
-                                 3. Applies f to 1 and 2.
-                                 4. Returns the result of 3."))
+                               Finally, process does the following:
+                               1. Marks the rewriting system with the
+                               given marker.
+                               2. Computes the union of the
+                               collections returned by the rules.
+                               3. Applies f to 1 and 2.
+                               4. Returns the result of 3."))
 
 (defrecord RewritingSystem [loggers logs history])
 
@@ -99,7 +99,7 @@
   For every set S that contains exactly one element from every
   collection in coll-of-colls, f' applies f to rs and S. f' returns
   the results of these function calls as a foldable collection."
-  [f]
-  (fn [rs coll-of-colls]
-    (r/map (partial post rs)
-           (u/one-from-each coll-of-colls))))
+[f]
+(fn [rs coll-of-colls]
+  (r/map (partial post rs)
+         (u/one-from-each coll-of-colls))))

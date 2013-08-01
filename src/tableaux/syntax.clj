@@ -24,5 +24,7 @@
           [3 :and] (and (wff? (nth form 1))
                         (wff? (nth form 2)))
           [3 :box] (and (contains? Ind (nth form 1))
-                        (wff? (nth form 2))))
+                        (wff? (nth form 2)))
+          [3 :!] (and (wff? (nth form 1))
+                      (wff? (nth form 2))))
         (catch Exception x false))))
