@@ -1,6 +1,58 @@
-(ns tableaux.core-test
+(ns tableaux.tableau-test
   (:require [clojure.test :refer :all]
-            [tableaux.core :refer :all]))
+            [clojure.core.reducers :as r]
+            [tableaux.tableau :refer :all]
+            [tableaux.util :as u]))
+
+;(defn print-graph
+;  [rs]
+;  (println "Nodes:")
+;  (doseq [x (rw/query rs [:by-arity 1])] (println "-" x))
+;  (println "Edges:")
+;  (doseq [x (rw/query rs [:by-arity 3])] (println "-" x))
+;  (println "Labels:")
+;  (doseq [x (rw/query rs [:by-arity 2])] (println "-" x)))
+;
+;(defn explain
+;[form]
+;(print (str "Constructing tableaux for " form "..."))
+;(let [open-tableaux (->> (construct-tableaux [:start-node form])
+;                         (r/filter consistent?)
+;                         (r/foldcat))
+;      sat (not (empty? open-tableaux))
+;      valid (valid? form)]
+;  (println " done.")
+;  (if sat
+;    (do
+;      (println "The formula is"
+;               (if valid
+;                 "valid."
+;                 "satisfiable but not valid."))
+;      (when (not valid)
+;        (if (= 1 (count open-tableaux))
+;          (println "One open tableau was constructed.")
+;          (println (count open-tableaux)
+;                   "open tableaux were constructed. Here's one."))
+;        (print-graph (first open-tableaux))
+;        (consistent? (first open-tableaux))))
+;    (println "The formula is not satisfiable."
+;             "Therefore, its negation is valid."))
+;  (first open-tableaux)))
+
+(defn- construct-tableaux
+[[start-node form]]
+(second (saturate [(tableau start-node form)])))
+
+(defn- satisfiable?
+  [form]
+  (->> (construct-tableaux [:start-node form])
+       (r/filter consistent?)
+       (u/fold-empty?)
+       (not)))
+
+(defn- valid?
+  [form]
+  (not (satisfiable? [:not form])))
 
 (defn- is-valid [form doc]
   (is (valid? form) (str doc " - valid?"))
@@ -44,7 +96,8 @@
                      [:not [:and [:not :p] :q]]
                      [:and :q [:not :p]]]] "P4"))
   (testing "Modal axioms"
-    (is-valid [:not [:and [:box :a [:not [:and :p [:not :q]]]]
+    (is-valid [:not [:and
+                     [:box :a [:not [:and :p [:not :q]]]]
                      [:and [:box :a :p] [:not [:box :a :q]]]]] "K")
     (is-valid [:not [:and
                      [:box :a :p]
@@ -63,5 +116,3 @@
                      [:not [:box :a [:not [:box :a [:not :p]]]]]]] "5")))
 
 (run-tests)
-
-; (explain [:not [:and [:and :p :q] [:and :r :s]]])

@@ -28,3 +28,9 @@
           [3 :!] (and (wff? (nth form 1))
                       (wff? (nth form 2))))
         (catch Exception x false))))
+
+(defn implies [x y]
+  [:not [:and x [:not y]]])
+
+(defn iff [x y]
+  [:and (implies x y) (implies y x)])
