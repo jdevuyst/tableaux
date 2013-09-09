@@ -8,7 +8,7 @@
             [tableaux.tableau :as tab]))
 
 (defn tableau-cascade [form]
-  (rw/post (rw/rewriting-system [log/log-by-arity
+  (rw/post (rw/logging-system [log/log-by-arity
                                  log/log-labels-by-node
                                  log/log-edges-by-idx-src
                                  log/log-edges-by-src
@@ -16,7 +16,7 @@
            [[:start-tableau]
             [:start-tableau (tab/tableau :start-node form)]]))
 
-(defn current-tab [casc t]
+(defn newest-tableau [casc t]
   (second (rw/newest casc [:labels-by-node t])))
 
 (defn saturate-tableau
@@ -25,9 +25,9 @@
    (->> [tab]
         (tab/saturate)
         ((fn [[changed tableaux]]
-         (when changed
-            (r/map (fn [new-tab] [t new-tab])
-                   tableaux))))
+           (when changed
+             (r/map (fn [new-tab] [t new-tab])
+                    tableaux))))
         (r/foldcat)
         (vector))))
 
@@ -38,7 +38,7 @@
      tab
      (fn [new-tab updates]
        [(r/fold u/mmap-merge updates)])
-     :prime-synchronize-mark
+     :prime-sync-mark
      [(fn
         ([] [:labels-by-prefix :!])
         ([cur-tab [n [op form1 form2] :as node-label]]
@@ -78,7 +78,7 @@
        (r/cat (->> (rw/query casc [:edges-by-dest t])
                    (r/map second)
                    (r/foldcat)))
-       (r/mapcat (fn [t] (->> (current-tab casc t)
+       (r/mapcat (fn [t] (->> (newest-tableau casc t)
                               (#(rw/query % [:by-arity 1]))
                               (r/map (fn [[n]] {n #{t}})))))
        (r/fold u/mmap-merge)))
@@ -88,12 +88,12 @@
   ([casc [precond t1 t2]]
    [(r/fold u/mmap-merge
             ; copy nodes from t2 to t1
-            [(->> (rw/query (current-tab casc t2)
+            [(->> (rw/query (newest-tableau casc t2)
                             [:by-arity 1])
                   (r/map (fn [x] {t1 #{x}}))
                   (r/fold u/mmap-merge))
              ; copy nodes from t1 to t2
-             (->> (rw/query (current-tab casc t1)
+             (->> (rw/query (newest-tableau casc t1)
                             [:labels-by-label precond])
                   (r/map (fn [[n form]] {t2 #{[n]}}))
                   (r/fold u/mmap-merge))])]))
@@ -106,7 +106,7 @@
        tab
        (fn [rs updates]
          [(r/fold u/mmap-merge updates)])
-       :prime-synchronize-mark
+       :prime-sync-mark
        [(fn
           ; copy atoms to this tableau
           ([] [:by-arity 1])
@@ -171,7 +171,7 @@
     (->> (apply u/mmap-merge table)
          (r/mapcat (fn [t coll]
                      (if t
-                       [[t (-> (current-tab meta-tab t)
+                       [[t (-> (newest-tableau meta-tab t)
                                (rw/mark marker)
                                (rw/post coll))]]
                        coll)))
@@ -184,40 +184,33 @@
              (r/mapcat #(rw/process
                           %
                           (rw/disjunctify rw/post)
-                          :mark
+                          :casc-sat-mark
                           [saturate-tableau]))
              (r/map #(rw/process
                        %
-                       (meta-dispatcher % :prime-synchronize-mark)
-                       :mark2
+                       (meta-dispatcher % :prime-sync-mark)
+                       :casc-sat-mark2
                        [prime
                         synchronize
                         synchronize-init]))
              (r/foldcat))]
     (if-not (->> next-rss
-                 (r/mapcat #(rw/since % :mark))
+                 (r/mapcat #(rw/since % :casc-sat-mark))
                  (u/fold-empty?))
       (recur next-rss)
       next-rss)))
 
-(defn construct-tableau-cascades
-  [form]
-  (saturate [(tableau-cascade form)]))
-
-(defn consistent?
-  [casc]
+(defn consistent? [casc]
   (->> (rw/query casc [:by-arity 1])
        (r/map #(rw/newest casc [:labels-by-node (first %)]))
        (r/filter #(not (tab/consistent? (second %))))
        (u/fold-empty?)))
 
-(defn satisfiable?
-  [form]
-  (->> (construct-tableau-cascades form)
+(defn satisfiable? [form]
+  (->> (saturate [(tableau-cascade form)])
        (r/filter consistent?)
        (u/fold-empty?)
        (not)))
 
-(defn valid?
-  [form]
+(defn valid? [form]
   (not (satisfiable? [:not form])))

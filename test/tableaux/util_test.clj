@@ -29,4 +29,4 @@
            '#{#{1 :a c} #{1 :a d} #{1 :b c} #{1 :b d}
               #{2 :a c} #{2 :a d} #{2 :b c} #{2 :b d}}))))
 
-(run-tests)
+;(run-tests)

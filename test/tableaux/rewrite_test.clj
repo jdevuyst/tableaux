@@ -4,13 +4,13 @@
             [tableaux.rewrite :refer :all]
             [tableaux.util :as u]))
 
-(deftest rewritingsystem-tests
+(deftest LoggingSystem-tests
   (testing "post"
-    (is (= (-> (rewriting-system [(fn [v] {:k #{v}})])
+    (is (= (-> (logging-system [(fn [v] {:k #{v}})])
                (post [1 2 3])
                (.everything))
            {:k #{1 2 3}}))
-    (is (= (-> (->RewritingSystem [(fn [v] {:k1 #{(dec v)}})
+    (is (= (-> (->LoggingSystem [(fn [v] {:k1 #{(dec v)}})
                                    (fn [v] {:k1 #{(inc v)}})
                                    (fn [v] {:k2 #{v}})]
                                   {:a #{1}}
@@ -21,26 +21,26 @@
                (first))
            {:k1 #{4 6} :k2 #{5}})))
   (testing "query"
-    (is (= (-> (->RewritingSystem {}, {:a #{1 2}}, {:a #{1 2}}, (list))
+    (is (= (-> (->LoggingSystem {}, {:a #{1 2}}, {:a #{1 2}}, (list))
                (query :a))
            #{1 2}))
-    (is (= (-> (->RewritingSystem {}, {:a #{1 2}}, {:a #{1 2}}, (list))
+    (is (= (-> (->LoggingSystem {}, {:a #{1 2}}, {:a #{1 2}}, (list))
                (query :b))
            #{})))
   (testing "since"
-    (is (= (-> (rewriting-system [(fn [x] {:k #{x}})])
+    (is (= (-> (logging-system [(fn [x] {:k #{x}})])
                (post [1 2])
                (post [3 4])
                (since :X))
            {:k #{1 2 3 4}}))
-    (is (= (-> (rewriting-system [(fn [x] {:k #{x}})])
+    (is (= (-> (logging-system [(fn [x] {:k #{x}})])
                (mark :X)
                (post [1 2])
                (mark :Y)
                (post [3 4])
                (since :Y))
            {:k #{3 4}}))
-    (is (= (-> (rewriting-system [(fn [x] {:k #{x}})])
+    (is (= (-> (logging-system [(fn [x] {:k #{x}})])
                (mark :X)
                (post [1 2])
                (mark :marker)
@@ -50,12 +50,12 @@
                (since :marker))
            {:k #{3 4}})))
   (testing "newest"
-    (is (= (-> (rewriting-system [(fn [x] {:k #{x}})])
+    (is (= (-> (logging-system [(fn [x] {:k #{x}})])
                (post [1 2])
                (post [3])
                (newest :k))
            3))
-    (is (= (-> (rewriting-system [(fn [x] {(first x) #{(second x)}})])
+    (is (= (-> (logging-system [(fn [x] {(first x) #{(second x)}})])
                (post [[1 2]])
                (post [[3 4]])
                (post [[3 5]])
@@ -64,7 +64,7 @@
                (newest 3))
            5)))
   (testing "process"
-    (is (= (-> (->RewritingSystem [(fn [x] {:k #{x}})]
+    (is (= (-> (->LoggingSystem [(fn [x] {:k #{x}})]
                                   {:a #{1 2 3} :b #{4 5}}
                                   {:a #{1 2 3} :b #{4 5}}
                                   (list {:a #{1 2 3} :b #{4 5}}))
@@ -79,13 +79,13 @@
                                 ([] :k)
                                 ([rs x] #{(inc x)}))]
                              (process rs post nil)))
-               (iterate (-> (rewriting-system [(fn [x] {:k #{x}})])
+               (iterate (-> (logging-system [(fn [x] {:k #{x}})])
                             (post [1])))
                (nth 9)
                (query :k))
            (set (range 1 11)))))
   (testing "Branching"
-    (is (= (->> (-> (->RewritingSystem [(fn [x] {:k #{x}})]
+    (is (= (->> (-> (->LoggingSystem [(fn [x] {:k #{x}})]
                                        {}
                                        {}
                                        (list {:a #{[1 2] ['x 'y] [:A :B]} :b #{4 5}}))
@@ -98,4 +98,4 @@
                 (r/fold (r/monoid conj hash-set)))
            (u/foldset (u/one-from-each [[1 2] ['x 'y] [:A :B]]))))))
 
-(run-tests)
+;(run-tests)

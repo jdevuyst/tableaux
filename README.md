@@ -1,4 +1,4 @@
-# Dynamic Web Tableaux for Public Announcement Logic
+# Dynamic Tableaux for Public Announcement Logic
 
 A web-based implementation of my 'dynamic' tableau system for public announcement logic. I explain some keywords below. I will expand this README in the future.
 
@@ -16,7 +16,7 @@ Tableau systems are formal systems for constructing models that satisfy a given 
 
 # What are Dynamic Tableaux?
 
-In my dissertation (a work in progress) I describe tableau systems for various dynamic modal logic, including public announcement logics. These tableau systems have rules that closely mirror the 'dynamic' semantics of dynamic modal logics.
+In my dissertation (soon to be available) I describe tableau systems for various dynamic modal logic, including public announcement logics. These tableau systems have rules that closely mirror the 'dynamic' semantics of dynamic modal logics.
 
 A short and very technical abstract by me: http://jdevuyst.appspot.com/abstracts/2013/jdevuyst-dynamic_tableaux_for_PAL-lics13-abstract.pdf
 
@@ -33,4 +33,4 @@ To get started, perform the following steps.
 3. Go to the project root folder (the one containing project.clj) in your terminal.
 4. Run "lein test".
 
-Among other things, this will test some well-known validities. See "test/tableaux/cascade-test.clj" to inspect them.
+Among other things, this will test some well-known validities (Hilbert, S5 axioms, PAL reduction axioms). These tests are located at the bottom of "test/tableaux/cascade-test.clj".

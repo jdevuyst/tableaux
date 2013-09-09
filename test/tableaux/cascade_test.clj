@@ -1,12 +1,33 @@
 (ns tableaux.cascade-test
   (:require [clojure.test :refer :all]
             [tableaux.cascade :refer :all]
+            [tableaux.syntax :refer :all]
             [tableaux.tableau :as tab]
             [tableaux.rewrite :as rw]
             [tableaux.util :as u]
             [tableaux.loggers :as log]
-            [tableaux.syntax :as syntax]
             [clojure.core.reducers :as r]))
+
+; TODO: find a good place for the function below
+(defn summarize-cascades [cascades]
+  (println "Number of branches" (count cascades))
+  (println "Largest number of tableaux"
+           (->> cascades
+                (r/map #(count (rw/query % [:by-arity 1])))
+                r/foldcat
+                (apply max)))
+  (println "Largest number of worlds"
+           (->> cascades
+                (r/mapcat #(->> (rw/query % [:by-arity 1])
+                                (r/map (fn [[t]]
+                                         (count (rw/query (newest-tableau % t)
+                                                          [:by-arity 1]))))))
+                r/foldcat
+                (apply max)))
+  cascades)
+
+(defn- construct-tableau-cascades [form]
+  (saturate [(tableau-cascade form)]))
 
 (def t1 (tab/tableau :n :p))
 (def t2 (-> (tab/tableau :n :r)
@@ -23,11 +44,11 @@
 
 (deftest basic
   (testing "Basic cascade functionality"
-    (testing "current-tab"
-      (is (= (-> (rw/rewriting-system [log/log-labels-by-node])
+    (testing "newest-tableau"
+      (is (= (-> (rw/logging-system [log/log-labels-by-node])
                  (rw/post [[:t 50]])
                  (rw/post [[:t 100]])
-                 (current-tab :t))
+                 (newest-tableau :t))
              100)))
     (testing "tableau-saturate"
       (is (= (count (saturate-tableau
@@ -155,18 +176,18 @@
                   (some #{:primed}))
              :primed))
       (comment is (let [casc (->> (tableau-cascade [:not [:! :p :q]])
-                          (#(rw/process %
-                                        (meta-dispatcher % :primed)
-                                        :primed
-                                        [prime])))]
-            (= (rw/.logs casc)
-               (rw/.logs (->> casc
-                              (#(rw/process %
-                                            (meta-dispatcher % :primed)
-                                            :primed
-                                            [prime]))))))))
+                                  (#(rw/process %
+                                                (meta-dispatcher % :primed)
+                                                :primed
+                                                [prime])))]
+                    (= (rw/.logs casc)
+                       (rw/.logs (->> casc
+                                      (#(rw/process %
+                                                    (meta-dispatcher % :primed)
+                                                    :primed
+                                                    [prime]))))))))
     (testing "synchronization-range"
-      (is (= (-> (rw/rewriting-system [log/log-by-arity
+      (is (= (-> (rw/logging-system [log/log-by-arity
                                        log/log-labels-by-node
                                        log/log-edges-by-src
                                        log/log-edges-by-dest])
@@ -178,7 +199,7 @@
                  (synchronization-range :t3))
              {:m #{:t2}, :n #{:t1 :t2}})))
     (testing "synchronize"
-      (is (= (let [casc (-> (rw/rewriting-system [log/log-by-arity
+      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
                                                   log/log-labels-by-node
                                                   log/log-edges-by-src
                                                   log/log-edges-by-idx-src
@@ -197,7 +218,7 @@
                :t4 #{[:n] [:n [:and [:not :r] :r]]}
                :t2 #{[:n] [:n :s]}
                :t3 #{[:n :p] [:n :r]}}]))
-      (is (= (let [casc (-> (rw/rewriting-system [log/log-by-arity
+      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
                                                   log/log-labels-by-node
                                                   log/log-edges-by-src
                                                   log/log-edges-by-idx-src
@@ -214,7 +235,7 @@
                (synchronize casc [:t2 t2]))
              [{:t2 #{[:n :s]}
                :t3 #{[:n] [:m] [:n :r] [:m :s] [:n :s]}}]))
-      (is (= (let [casc (-> (rw/rewriting-system [log/log-by-arity
+      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
                                                   log/log-labels-by-node
                                                   log/log-edges-by-src
                                                   log/log-edges-by-idx-src
@@ -225,7 +246,7 @@
                (synchronize casc [:t2 t2]))
              [{:t2 #{[:n :s]}
                :t3 #{[:n] [:m] [:n :r]}}]))
-      (is (= (let [casc (-> (rw/rewriting-system [log/log-by-arity
+      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
                                                   log/log-labels-by-node
                                                   log/log-edges-by-src
                                                   log/log-edges-by-idx-src
@@ -236,7 +257,7 @@
                (synchronize casc [:t4 t4]))
              [{:t4 #{[:k :q] [:a :k :l]}
                :t5 #{[:l :r] [:a :l :k]}}]))
-      (is (= (let [casc (-> (rw/rewriting-system [log/log-by-arity
+      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
                                                   log/log-labels-by-node
                                                   log/log-edges-by-src
                                                   log/log-edges-by-idx-src
@@ -247,7 +268,7 @@
                (synchronize casc [:t6 t6]))
              [{:t5 #{[:l] [:l :q] [:k] [:k :q]}
                :t6 #{[:a :k :l] [:k :q]}}]))
-      (is (= (let [casc (-> (rw/rewriting-system [log/log-by-arity
+      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
                                                   log/log-labels-by-node
                                                   log/log-edges-by-src
                                                   log/log-edges-by-idx-src
@@ -258,40 +279,6 @@
                (synchronize casc [:t7 t7])))
           [{:t5 #{[:k]}
             :t7 #{[:a :k :l] [:k :q]}}])))
-  ;    (testing "Synchronize backwards"
-  ;      (is (= (let [[[t tab]] (synchronize-backward
-  ;                               (-> (rw/rewriting-system [log/log-by-arity
-  ;                                                         log/log-labels-by-node
-  ;                                                         log/log-edges-by-src
-  ;                                                         log/log-edges-by-dest
-  ;                                                         log/log-edges-by-idx-src])
-  ;                                   (rw/post #{[:t1 t1]
-  ;                                              [:t2 t2]
-  ;                                              [:t3 t3]
-  ;                                              [:p :t1 :t2]
-  ;                                              [:q :t1 :t3]}))
-  ;                               [:t1 t1])]
-  ;               (apply hash-set (concat (rw/query tab [:by-arity 1])
-  ;                                       (rw/query tab [:by-arity 2])
-  ;                                       (rw/query tab [:by-arity 3]))))
-  ;             #{[:m] [:n] [:m :p] [:n :p] [:n :q] [:n :s] [:n :r] [:m :r] [:a :n :m]})))
-  ;    (testing "Synchronize forwards"
-  ;      (is (= (let [[[t tab]] (synchronize-forward
-  ;                               (-> (rw/rewriting-system [log/log-by-arity
-  ;                                                         log/log-labels-by-node
-  ;                                                         log/log-edges-by-src
-  ;                                                         log/log-edges-by-dest])
-  ;                                   (rw/post #{[:t1 t1]
-  ;                                              [:t2 t2]
-  ;                                              [:t3 t3]
-  ;                                              [:p :t1 :t2]
-  ;                                              [:q :t1 :t3]
-  ;                                              [[:not :q] :t2 :t3]}))
-  ;                               [:t3 t3])]
-  ;               (apply hash-set (concat (rw/query tab [:by-arity 1])
-  ;                                       (rw/query tab [:by-arity 2])
-  ;                                       (rw/query tab [:by-arity 3]))))
-  ;             #{[:a :n :m] [:n :s] [:n :r] [:m :r] [:m] [:n]}))))
   (testing "Testing saturate"
     (is (= (count (construct-tableau-cascades [:not [:not :p]]))
            1))
@@ -306,10 +293,15 @@
            2))))
 
 (defn- is-valid [form doc]
+  (comment is (satisfiable? form) (str doc " - satisfiable?"))
   (is (valid? form) (str doc " - valid?"))
-  (is (satisfiable? form)) (str doc " - satisfiable?"))
+  (comment is (valid? [:box :e form]) (str doc " - necessitation valid?")))
 
-(deftest logic
+(defn- is-equiv [form1 form2 doc]
+  (is-valid (implies form1 form2) (str doc "(LR)"))
+  (is-valid (implies form2 form1) (str doc "(RL)")))
+
+(deftest elementary-logic
   (testing "Basic logic tests"
     (is (satisfiable? :p))
     (is (satisfiable? [:and :p [:not [:box :a :p]]]))
@@ -334,62 +326,59 @@
                                           [:not [:! :p :r]]
                                           [:! :q :s]]]]]))
            16))
-    (is-valid [:not [:and [:not [:not :p]] [:not :p]]] "not elimination")
-    (is-valid [:not [:and [:and :p :q] [:not :p]]] "and elimination")
-    (is-valid [:not [:and [:and :p :q] [:not :q]]] "and elimination")
-    (is-valid [:not [:and
-                     [:and :p [:not [:and :p [:not :q]]]]
-                     [:not :q]]] "modus ponens"))
+    (is-valid [:not [:and :p [:not :p]]] "excluded middle")
+    (is-valid (implies [:and (implies :p :q) :p]
+                       :q) "modus ponens")
+    (testing "Basic PAL tests"
+      (is (satisfiable? [:! :p :q]))
+      (is-valid [:! :p :p] "Atom invariance"))))
+
+(def A :p)
+(def B :q)
+(def C :r)
+
+(deftest axioms
   (testing "Hilbert axioms"
-    (is-valid [:not [:and
-                     :p
-                     [:not :p]]] "P1")
-    (is-valid [:not [:and
-                     :p
-                     [:and :q [:not :p]]]] "P2")
-    (is-valid [:not [:and
-                     [:not [:and :p [:and :q [:not :r]]]]
-                     [:and
-                      [:not [:and :p [:not :q]]]
-                      [:and :p [:not :r]]]]] "P3")
-    (is-valid [:not [:and
-                     [:not [:and [:not :p] :q]]
-                     [:and :q [:not :p]]]] "P4"))
+    (is-valid (implies A A) "P1")
+    (is-valid (implies A
+                       (implies B A)) "P2")
+    (is-valid (implies (implies A
+                                (implies B C))
+                       (implies (implies A B)
+                                (implies A C))) "P3")
+    (is-valid (implies (implies [:not A]
+                                [:not B])
+                       (implies B A)) "P4"))
   (testing "Modal axioms"
-    (is-valid [:not [:and
-                     [:box :a [:not [:and :p [:not :q]]]]
-                     [:and [:box :a :p] [:not [:box :a :q]]]]] "K")
-    (is-valid [:not [:and
-                     [:box :a :p]
-                     [:not :p]]] "T")
-    (is-valid [:not [:and
-                     [:box :a :p]
-                     [:not [:box :a [:box :a :p]]]]] "4")
-    (is-valid [:not [:and
-                     [:box :a :p]
-                     [:box :a [:not :p]]]] "D")
-    (is-valid [:not [:and
-                     :p
-                     [:not [:box :a [:not [:box :a [:not :p]]]]]]] "B")
-    (is-valid [:not [:and
-                     [:not [:box :a [:not :p]]]
-                     [:not [:box :a [:not [:box :a [:not :p]]]]]]] "5"))
-  (testing "Basic PAL tests"
-    (is (satisfiable? [:! :p :q]))
-    (is-valid [:! :p :p] "Atom invariance"))
+    (is-valid (implies [:box :a (implies A B)]
+                       (implies [:box :a A]
+                                [:box :a B])) "K")
+    (is-valid (implies [:box :a A] A) "T")
+    (is-valid (implies [:box :a A]
+                       [:box :a [:box :a A]]) "4")
+    (is-valid (implies [:box :a A]
+                       (diamond :a A)) "D")
+    (is-valid (implies A [:box :a (diamond :a A)]) "B")
+    (is-valid (implies (diamond :a A)
+                       [:box :a (diamond :a A)]) "5"))
   (testing "PAL reduction axioms"
-    (is-valid (syntax/iff [:! :p :q]
-                          (syntax/implies :p :q)) "RA1")
-    (is-valid (syntax/iff [:! :p [:not :q]]
-                          (syntax/implies :p [:not [:! :p :q]])) "RA2")
-    (is-valid (syntax/iff [:! :p [:and :q :r]]
-                          [:and [:! :p :q] [:! :p :r]]) "RA3")
-    (is-valid (syntax/iff [:! :q [:box :a :p]]
-                          (syntax/implies :q [:box :a (syntax/implies :q [:! :q :p])])) "RA4")
-    (is-valid (syntax/iff [:! :p [:! :q :r]]
-                          [:! [:and :p :q] :r]) "RA5")
-    ))
+    (is-equiv [:! A :t]
+              (implies A :t)
+              "RA1")
+    (is-equiv [:! A [:not B]]
+              (implies A
+                       [:not [:! A B]])
+              "RA2")
+    (is-equiv [:! A [:and B C]]
+              [:and [:! A B] [:! A C]]
+              "RA3")
+    (is-equiv [:! B [:box :a A]]
+              (implies B
+                       [:box :a (implies B
+                                         [:! B A])])
+              "RA4")
+    (is-equiv [:! A [:! B C]]
+              [:! [:and A B] C]
+              "RA5")))
 
-(run-tests)
-
-; (explain [:not [:and [:and :p :q] [:and :r :s]]])
+;(run-tests)

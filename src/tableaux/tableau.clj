@@ -11,7 +11,7 @@
   ([node form]
    (if (not (syntax/wff? form))
      (throw (IllegalArgumentException. (str "Not a wff: " form))))
-   (-> (rw/rewriting-system [log/log-by-arity
+   (-> (rw/logging-system [log/log-by-arity
                              log/log-labels-by-label
                              log/log-labels-by-prefix
                              log/log-labels-by-prefix2
@@ -22,15 +22,14 @@
                              log/log-edges-by-dest])
        (rw/post [[node] [node form]]))))
 
-(defn saturate
-  [tableaux]
+(defn saturate [tableaux]
   (loop [tableaux tableaux
          changed false]
     (let [next-rss
           (->> tableaux
                (r/map #(rw/process %
                                    rw/post
-                                   :mark
+                                   :tab-sat-mark
                                    [tr/rule-not-not
                                     tr/rule-and
                                     tr/rule-box1
@@ -40,11 +39,11 @@
                                     tr/rule-4]))
                (r/map #(rw/process %
                                    rw/post
-                                   :mark2
+                                   :tab-sat-mark2
                                    [tr/rule-not-box]))
                (r/mapcat #(rw/process %
                                       (rw/disjunctify rw/post)
-                                      :mark3
+                                      :tab-sat-mark3
                                       [tr/fork-rule-not-and
                                        tr/fork-rule-precond1
                                        tr/fork-rule-precond2
@@ -52,13 +51,12 @@
                                        tr/fork-rule-precond4]))
                (r/foldcat))]
       (if-not (->> next-rss
-                   (r/mapcat #(rw/since % :mark))
+                   (r/mapcat #(rw/since % :tab-sat-mark))
                    (u/fold-empty?))
         (recur next-rss true)
         [changed next-rss]))))
 
-(defn consistent?
-  [rs]
+(defn consistent? [rs]
   (let [not-stmnts (rw/query rs [:labels-by-prefix :not])]
     (->> (rw/query rs [:labels-by-prefix nil])
          (r/filter #(get not-stmnts [(first %) [:not (second %)]]))

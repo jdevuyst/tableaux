@@ -23,4 +23,4 @@
     (is (= (log-edges-by-dest [1 2 3])
            {[:edges-by-dest 3] #{[1 2 3]}}))))
 
-(run-tests)
+;(run-tests)

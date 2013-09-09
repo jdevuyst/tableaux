@@ -2,7 +2,7 @@
   (:require [clojure.core.reducers :as r]
             [tableaux.util :as u]))
 
-(defprotocol IRewritingSystem
+(defprotocol ILoggingSystem
   (post [this coll])
   (query [this k])
   (mark [this marker])
@@ -10,19 +10,19 @@
   (since [this marker])
   (process [this f marker rules]))
 
-(defrecord RewritingSystem [loggers everything newest history])
+(defrecord LoggingSystem [loggers everything newest history])
 
-(defn rewriting-system
-[loggers] (RewritingSystem. loggers {} {} '()))
+(defn logging-system [loggers]
+  (LoggingSystem. loggers {} {} '()))
 
-(extend-type RewritingSystem
-  IRewritingSystem
+(extend-type LoggingSystem
+  ILoggingSystem
   (post [this coll]
         (let [aggr-result (->> (.loggers this)
                                (u/rjuxt (constantly coll))
                                (r/map (fn [[f v]] (f v)))
                                (r/reduce u/mmap-merge))]
-          (RewritingSystem. (.loggers this)
+          (LoggingSystem. (.loggers this)
                             (u/mmap-merge (.everything this) aggr-result)
                             (u/map-merge-overwrite (.newest this) aggr-result)
                             (cons (u/mmap-diff aggr-result (.everything this))
@@ -30,7 +30,7 @@
   (query [this k] (u/mmap-get (.everything this) k))
   (mark [this marker]
         (assert (not (coll? marker)))
-        (RewritingSystem. (.loggers this)
+        (LoggingSystem. (.loggers this)
                           (.everything this)
                           (.newest this)
                           (cons marker (.history this))))
@@ -45,12 +45,10 @@
              (->> rules
                   (u/rjuxt #(get new-logs (%)))
                   (r/mapcat (fn [[f v]] (f this v)))
-                  ;(r/fold 5 (r/cat #(java.util.HashSet.)) r/append!)
                   (u/foldset)
                   (f (mark this marker))))))
 
-(defn disjunctify
-[f]
-(fn [rs coll-of-colls]
-  (r/map (partial f rs)
-         (u/one-from-each coll-of-colls))))
+(defn disjunctify [f]
+  (fn [rs coll-of-colls]
+    (r/map (partial f rs)
+           (u/one-from-each coll-of-colls))))

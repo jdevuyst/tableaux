@@ -15,4 +15,4 @@
     (is (wff? [:not [:and :p :q]]))
     (is (not (wff? [:and :p [:not :box :p]])))))
 
-(run-tests)
+;(run-tests)
