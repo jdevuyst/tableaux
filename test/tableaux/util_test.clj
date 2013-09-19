@@ -4,6 +4,11 @@
             [tableaux.util :refer :all]))
 
 (deftest utility-tests
+  (testing "mmap-conj"
+    (is (= (mmap-conj {:a #{1 2} :b #{4}} [:a 3])
+           {:a #{1 2 3} :b #{4}}))
+    (is (= (mmap-conj {:a #{1 2} :b #{4}} [:c 3])
+           {:a #{1 2} :b #{4} :c #{3}})))
   (testing "mmap-merge"
     (is (= (mmap-merge {:a #{1}} {:a #{2}})
            {:a #{1 2}})))

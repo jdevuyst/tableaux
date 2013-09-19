@@ -3,9 +3,8 @@
             [tableaux.cascade :refer :all]
             [tableaux.syntax :refer :all]
             [tableaux.tableau :as tab]
-            [tableaux.rewrite :as rw]
+            [tableaux.bag :as bag]
             [tableaux.util :as u]
-            [tableaux.loggers :as log]
             [clojure.core.reducers :as r]))
 
 ; TODO: find a good place for the function below
@@ -13,43 +12,51 @@
   (println "Number of branches" (count cascades))
   (println "Largest number of tableaux"
            (->> cascades
-                (r/map #(count (rw/query % [:by-arity 1])))
+                (r/map #(count (bag/query % [:by-arity 1])))
                 r/foldcat
                 (apply max)))
   (println "Largest number of worlds"
            (->> cascades
-                (r/mapcat #(->> (rw/query % [:by-arity 1])
+                (r/mapcat #(->> (bag/query % [:by-arity 1])
                                 (r/map (fn [[t]]
-                                         (count (rw/query (newest-tableau % t)
+                                         (count (bag/query (newest-tableau % t)
                                                           [:by-arity 1]))))))
                 r/foldcat
                 (apply max)))
   cascades)
+
+(defn implies [x y]
+  [:not [:and x [:not y]]])
+
+(defn equiv [x y]
+  [:and (implies x y) (implies y x)])
+
+(defn diamond [idx form]
+  [:not [:box idx [:not form]]])
 
 (defn- construct-tableau-cascades [form]
   (saturate [(tableau-cascade form)]))
 
 (def t1 (tab/tableau :n :p))
 (def t2 (-> (tab/tableau :n :r)
-            (rw/post [[:m] [:a :n :m] [:m [:not :p]] [:m [:not :q]] [:n [:not :q]] [:m :r]])))
+            (bag/post [[:m] [:a :n :m] [:m [:not :p]] [:m [:not :q]] [:n [:not :q]] [:m :r]])))
 (def t3 (tab/tableau :n :s))
-(def t4 (rw/post (tab/tableau :j :q)
+(def t4 (bag/post (tab/tableau :j :q)
                  [[:l] [:l :r] [:k] [:a :l :k] [:b :j :k] [:b :l :j]]))
-(def t5 (rw/post (tab/tableau :k :q)
+(def t5 (bag/post (tab/tableau :k :q)
                  [[:l] [:a :k :l]]))
-(def t6 (rw/post (rw/mark (tab/tableau :k :q) :synchronized)
+(def t6 (bag/post (bag/mark (tab/tableau :k :q) :synchronized)
                  [[:l]]))
-(def t7 (rw/post (rw/mark (tab/tableau :l :q) :synchronized)
+(def t7 (bag/post (bag/mark (tab/tableau :l :q) :synchronized)
                  [[:k]]))
 
 (deftest basic
   (testing "Basic cascade functionality"
     (testing "newest-tableau"
-      (is (= (-> (rw/logging-system [log/log-labels-by-node])
-                 (rw/post [[:t 50]])
-                 (rw/post [[:t 100]])
-                 (newest-tableau :t))
-             100)))
+      (is (= (-> (bag/tuple-bag [bag/index-pairs-by-first])
+                 (bag/post [[:t t5]])
+                 (bag/post [[:t t6]])
+                 (newest-tableau :t)))))
     (testing "tableau-saturate"
       (is (= (count (saturate-tableau
                       nil
@@ -78,7 +85,7 @@
                   (saturate-tableau nil)
                   first
                   (r/map (fn [[t tab]]
-                           [t (rw/query tab [:by-arity 2])]))
+                           [t (bag/query tab [:by-arity 2])]))
                   (u/foldset))
              #{[:t #{[:start-node [:not [:not :p]]]
                      [:start-node :p]}]}))
@@ -86,7 +93,7 @@
                   (saturate-tableau nil)
                   first
                   (r/map (fn [[t tab]]
-                           [t (rw/query tab [:by-arity 2])]))
+                           [t (bag/query tab [:by-arity 2])]))
                   (u/foldset))
              #{[:t #{[:start-node [:not [:and :p :q]]]
                      [:start-node [:not :p]]}]
@@ -102,9 +109,9 @@
                   r/foldcat
                   first
                   second
-                  (#(concat (rw/query % [:by-arity 1])
-                            (rw/query % [:by-arity 2])
-                            (rw/query % [:by-arity 3]))))
+                  (#(concat (bag/query % [:by-arity 1])
+                            (bag/query % [:by-arity 2])
+                            (bag/query % [:by-arity 3]))))
              [[:start-node] [:start-node [:not :q]]]))
       (is (= (with-redefs
                [gensym (constantly 500)]
@@ -125,7 +132,7 @@
              #{[:start-node [:not [:! :p :q]]]
                [:start-node :p]}))
       (is (= (empty? (first (prime nil [:t (tab/tableau [:! :p :q])])))))
-      (is (= (->> (prime nil [:t (rw/post (rw/mark (tab/tableau :p) :primed)
+      (is (= (->> (prime nil [:t (bag/post (bag/mark (tab/tableau :p) :primed)
                                           [[:start-node [:! :p :q]]])])
                   first
                   (#(get % nil))
@@ -133,11 +140,11 @@
                   r/foldcat
                   first
                   second
-                  (#(concat (rw/query % [:by-arity 1])
-                            (rw/query % [:by-arity 2])
-                            (rw/query % [:by-arity 3]))))
+                  (#(concat (bag/query % [:by-arity 1])
+                            (bag/query % [:by-arity 2])
+                            (bag/query % [:by-arity 3]))))
              [[:start-node] [:start-node :q]]))
-      (is (= (->> (prime nil [:t (rw/post (rw/mark (tab/tableau [:! :p :q]) :primed)
+      (is (= (->> (prime nil [:t (bag/post (bag/mark (tab/tableau [:! :p :q]) :primed)
                                           [[:start-node :p]])])
                   first
                   (#(get % nil))
@@ -145,53 +152,53 @@
                   r/foldcat
                   first
                   second
-                  (#(concat (rw/query % [:by-arity 1])
-                            (rw/query % [:by-arity 2])
-                            (rw/query % [:by-arity 3]))))
+                  (#(concat (bag/query % [:by-arity 1])
+                            (bag/query % [:by-arity 2])
+                            (bag/query % [:by-arity 3]))))
              [[:start-node] [:start-node :q]]))
       (is (= (-> (tableau-cascade [:not [:! :p :q]])
-                 (#(rw/process %
-                               (meta-dispatcher % :primed)
+                 (#(->> (bag/process %
                                :primed
-                               [prime]))
+                               [prime])
+                        (apply meta-post)))
                  .history
                  (get [:by-arity 2]))
              (-> (tableau-cascade [:not [:! :p :q]])
-                 (#(rw/process %
-                               (meta-dispatcher % :primed)
+                 (#(->> (bag/process %
                                :primed
-                               [prime]))
-                 (#(rw/process %
-                               (meta-dispatcher % :primed)
+                               [prime])
+                        (apply meta-post)))
+                 (#(->> (bag/process %
                                :primed
-                               [prime]))
+                               [prime])
+                        (apply meta-post)))
                  .history
                  (get [:by-arity 2]))))
       (is (= (->> (tableau-cascade [:not [:! :p :q]])
-                  (#(rw/process %
-                                (meta-dispatcher % :primed)
-                                :primed
-                                [prime]))
-                  rw/.history
+                 (#(->> (bag/process %
+                               :primed
+                               [prime])
+                        (apply meta-post)))
+                  bag/.history
                   (some #{:primed}))
              :primed))
       (comment is (let [casc (->> (tableau-cascade [:not [:! :p :q]])
-                                  (#(rw/process %
+                                  (#(bag/process %
                                                 (meta-dispatcher % :primed)
                                                 :primed
                                                 [prime])))]
-                    (= (rw/.logs casc)
-                       (rw/.logs (->> casc
-                                      (#(rw/process %
+                    (= (bag/.bags casc)
+                       (bag/.bags (->> casc
+                                      (#(bag/process %
                                                     (meta-dispatcher % :primed)
                                                     :primed
                                                     [prime]))))))))
     (testing "synchronization-range"
-      (is (= (-> (rw/logging-system [log/log-by-arity
-                                       log/log-labels-by-node
-                                       log/log-edges-by-src
-                                       log/log-edges-by-dest])
-                 (rw/post #{[:t1 t1]
+      (is (= (-> (bag/tuple-bag [bag/index-by-arity
+                                       bag/index-pairs-by-first
+                                       bag/index-triples-by-second
+                                       bag/index-triples-by-third])
+                 (bag/post #{[:t1 t1]
                             [:t2 t2]
                             [:t3 t3]
                             [:p :t1 :t3]
@@ -199,12 +206,12 @@
                  (synchronization-range :t3))
              {:m #{:t2}, :n #{:t1 :t2}})))
     (testing "synchronize"
-      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
-                                                  log/log-labels-by-node
-                                                  log/log-edges-by-src
-                                                  log/log-edges-by-idx-src
-                                                  log/log-edges-by-dest])
-                            (rw/post #{[:t1 t1]
+      (is (= (let [casc (-> (bag/tuple-bag [bag/index-by-arity
+                                                  bag/index-pairs-by-first
+                                                  bag/index-triples-by-second
+                                                  bag/index-triples-by-first-second
+                                                  bag/index-triples-by-third])
+                            (bag/post #{[:t1 t1]
                                        [:t2 t2]
                                        [:t3 t3]
                                        [:t4 t4]
@@ -218,12 +225,12 @@
                :t4 #{[:n] [:n [:and [:not :r] :r]]}
                :t2 #{[:n] [:n :s]}
                :t3 #{[:n :p] [:n :r]}}]))
-      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
-                                                  log/log-labels-by-node
-                                                  log/log-edges-by-src
-                                                  log/log-edges-by-idx-src
-                                                  log/log-edges-by-dest])
-                            (rw/post #{[:t1 t1]
+      (is (= (let [casc (-> (bag/tuple-bag [bag/index-by-arity
+                                                  bag/index-pairs-by-first
+                                                  bag/index-triples-by-second
+                                                  bag/index-triples-by-first-second
+                                                  bag/index-triples-by-third])
+                            (bag/post #{[:t1 t1]
                                        [:t2 t2]
                                        [:t3 t3]
                                        [:t4 t4]
@@ -235,45 +242,45 @@
                (synchronize casc [:t2 t2]))
              [{:t2 #{[:n :s]}
                :t3 #{[:n] [:m] [:n :r] [:m :s] [:n :s]}}]))
-      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
-                                                  log/log-labels-by-node
-                                                  log/log-edges-by-src
-                                                  log/log-edges-by-idx-src
-                                                  log/log-edges-by-dest])
-                            (rw/post #{[:t2 t2]
+      (is (= (let [casc (-> (bag/tuple-bag [bag/index-by-arity
+                                                  bag/index-pairs-by-first
+                                                  bag/index-triples-by-second
+                                                  bag/index-triples-by-first-second
+                                                  bag/index-triples-by-third])
+                            (bag/post #{[:t2 t2]
                                        [:t3 t3]
                                        [:r :t2 :t3]}))]
                (synchronize casc [:t2 t2]))
              [{:t2 #{[:n :s]}
                :t3 #{[:n] [:m] [:n :r]}}]))
-      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
-                                                  log/log-labels-by-node
-                                                  log/log-edges-by-src
-                                                  log/log-edges-by-idx-src
-                                                  log/log-edges-by-dest])
-                            (rw/post #{[:t4 t4]
+      (is (= (let [casc (-> (bag/tuple-bag [bag/index-by-arity
+                                                  bag/index-pairs-by-first
+                                                  bag/index-triples-by-second
+                                                  bag/index-triples-by-first-second
+                                                  bag/index-triples-by-third])
+                            (bag/post #{[:t4 t4]
                                        [:t5 t5]
                                        [:p :t4 :t5]}))]
                (synchronize casc [:t4 t4]))
              [{:t4 #{[:k :q] [:a :k :l]}
                :t5 #{[:l :r] [:a :l :k]}}]))
-      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
-                                                  log/log-labels-by-node
-                                                  log/log-edges-by-src
-                                                  log/log-edges-by-idx-src
-                                                  log/log-edges-by-dest])
-                            (rw/post #{[:t5 t5]
+      (is (= (let [casc (-> (bag/tuple-bag [bag/index-by-arity
+                                                  bag/index-pairs-by-first
+                                                  bag/index-triples-by-second
+                                                  bag/index-triples-by-first-second
+                                                  bag/index-triples-by-third])
+                            (bag/post #{[:t5 t5]
                                        [:t6 t6]
                                        [:q :t5 :t6]}))]
                (synchronize casc [:t6 t6]))
              [{:t5 #{[:l] [:l :q] [:k] [:k :q]}
                :t6 #{[:a :k :l] [:k :q]}}]))
-      (is (= (let [casc (-> (rw/logging-system [log/log-by-arity
-                                                  log/log-labels-by-node
-                                                  log/log-edges-by-src
-                                                  log/log-edges-by-idx-src
-                                                  log/log-edges-by-dest])
-                            (rw/post #{[:t5 t5]
+      (is (= (let [casc (-> (bag/tuple-bag [bag/index-by-arity
+                                                  bag/index-pairs-by-first
+                                                  bag/index-triples-by-second
+                                                  bag/index-triples-by-first-second
+                                                  bag/index-triples-by-third])
+                            (bag/post #{[:t5 t5]
                                        [:t7 t7]
                                        [:q :t5 :t7]}))]
                (synchronize casc [:t7 t7])))
@@ -284,15 +291,16 @@
            1))
     (is (= (-> (construct-tableau-cascades [:not [:not :p]])
                (first)
-               (rw/newest [:labels-by-node :start-tableau])
+               (bag/newest [:pairs-by-first :start-tableau])
                second ; get tableau
-               (rw/query [:by-arity 2]))
+               (bag/query [:by-arity 2]))
            #{[:start-node [:not [:not :p]]]
              [:start-node :p]}))
     (is (= (count (construct-tableau-cascades [:not [:and :p :q]]))
            2))))
 
 (defn- is-valid [form doc]
+  (println "Testing" doc)
   (comment is (satisfiable? form) (str doc " - satisfiable?"))
   (is (valid? form) (str doc " - valid?"))
   (comment is (valid? [:box :e form]) (str doc " - necessitation valid?")))
@@ -336,6 +344,10 @@
 (def A :p)
 (def B :q)
 (def C :r)
+
+; stress test:
+;(def A (implies :p :p))
+;(def B (implies :p [:box :a (diamond :a :p)]))
 
 (deftest axioms
   (testing "Hilbert axioms"
