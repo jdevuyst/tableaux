@@ -1,9 +1,9 @@
-(ns tableaux.tableau
+(ns dyntab.tableau
   (:require [clojure.core.reducers :as r]
             [clojure.set :as set]
-            [tableaux.bag :as bag]
-            [tableaux.util :as u]
-            [tableaux.syntax :as syntax]))
+            [dyntab.bag :as bag]
+            [dyntab.util :as u]
+            [dyntab.syntax :as syntax]))
 
 (defn rule-not-not
   ([] [:pairs-by-first+second-of-second :not :not])

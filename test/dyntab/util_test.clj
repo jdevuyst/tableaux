@@ -1,7 +1,7 @@
-(ns tableaux.util-test
+(ns dyntab.util-test
   (:require [clojure.test :refer :all]
             [clojure.core.reducers :as r]
-            [tableaux.util :refer :all]))
+            [dyntab.util :refer :all]))
 
 (deftest utility-tests
   (testing "mmap-conj"

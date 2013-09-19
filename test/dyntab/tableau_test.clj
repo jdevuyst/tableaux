@@ -1,11 +1,11 @@
-(ns tableaux.tableau-test
+(ns dyntab.tableau-test
   (:require [clojure.test :refer :all]
-            [tableaux.syntax :refer :all]
             [clojure.core.reducers :as r]
-            [tableaux.bag :refer :all]
-            [tableaux.tableau :refer :all]
-            [tableaux.util :as u]
-            [tableaux.syntax :as syntax]))
+            [dyntab.syntax :refer :all]
+            [dyntab.bag :refer :all]
+            [dyntab.tableau :refer :all]
+            [dyntab.util :as u]
+            [dyntab.syntax :as syntax]))
 
 ; TODO: give print-graph and explain a better place!
 

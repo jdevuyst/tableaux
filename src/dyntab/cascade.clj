@@ -1,10 +1,10 @@
-(ns tableaux.cascade
+(ns dyntab.cascade
   (:require [clojure.core.reducers :as r]
             [clojure.set :as set]
-            [tableaux.util :as u]
-            [tableaux.bag :as bag]
-            [tableaux.syntax :as syntax]
-            [tableaux.tableau :as tab]))
+            [dyntab.util :as u]
+            [dyntab.bag :as bag]
+            [dyntab.syntax :as syntax]
+            [dyntab.tableau :as tab]))
 
 (defn tableau-cascade [form]
   (bag/post (bag/tuple-bag [bag/index-by-arity

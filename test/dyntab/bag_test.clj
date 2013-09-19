@@ -1,8 +1,8 @@
-(ns tableaux.bag-test
+(ns dyntab.bag-test
   (:require [clojure.test :refer :all]
             [clojure.core.reducers :as r]
-            [tableaux.bag :refer :all]
-            [tableaux.util :as u]))
+            [dyntab.bag :refer :all]
+            [dyntab.util :as u]))
 
 (deftest TupleBag-tests
   (testing "post"

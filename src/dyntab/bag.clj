@@ -1,6 +1,6 @@
-(ns tableaux.bag
+(ns dyntab.bag
   (:require [clojure.core.reducers :as r]
-            [tableaux.util :as u]))
+            [dyntab.util :as u]))
 
 (defprotocol ITupleBag
   (post [this coll])

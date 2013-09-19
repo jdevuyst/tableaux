@@ -1,4 +1,4 @@
-(ns tableaux.syntax)
+(ns dyntab.syntax)
 
 (def Prop #{:p :q :r :s :t})
 

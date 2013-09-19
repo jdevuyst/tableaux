@@ -1,10 +1,10 @@
-(ns tableaux.cascade-test
+(ns dyntab.cascade-test
   (:require [clojure.test :refer :all]
-            [tableaux.cascade :refer :all]
-            [tableaux.syntax :refer :all]
-            [tableaux.tableau :as tab]
-            [tableaux.bag :as bag]
-            [tableaux.util :as u]
+            [dyntab.cascade :refer :all]
+            [dyntab.syntax :refer :all]
+            [dyntab.tableau :as tab]
+            [dyntab.bag :as bag]
+            [dyntab.util :as u]
             [clojure.core.reducers :as r]))
 
 ; TODO: find a good place for the function below

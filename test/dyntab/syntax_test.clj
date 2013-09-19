@@ -1,7 +1,7 @@
-(ns tableaux.syntax-test
+(ns dyntab.syntax-test
   (:require [clojure.test :refer :all]
             [clojure.core.reducers :as r]
-            [tableaux.syntax :refer :all]))
+            [dyntab.syntax :refer :all]))
 
 (deftest syntax-tests
   (testing "wwf?"

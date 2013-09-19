@@ -29,4 +29,4 @@ To get started, perform the following steps.
 3. Go to the project root folder (the one containing project.clj) in your terminal.
 4. Run "lein test".
 
-Among other things, this will test some well-known validities (Hilbert axioms, S5 axioms, PAL reduction axioms). These tests are located at the bottom of "test/tableaux/cascade-test.clj".
+Among other things, this will test some well-known validities (Hilbert axioms, S5 axioms, PAL reduction axioms). These tests are located at the bottom of "test/dyntab/cascade-test.clj".

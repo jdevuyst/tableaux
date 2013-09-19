@@ -1,4 +1,4 @@
-(ns tableaux.util
+(ns dyntab.util
   (:require [clojure.core.reducers :as r]
             [clojure.set :as set]))
 
