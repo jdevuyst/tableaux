@@ -300,10 +300,9 @@
            2))))
 
 (defn- is-valid [form doc]
-  (println "Testing" doc)
-  (comment is (satisfiable? form) (str doc " - satisfiable?"))
   (is (valid? form) (str doc " - valid?"))
-  (comment is (valid? [:box :e form]) (str doc " - necessitation valid?")))
+  (is (satisfiable? form) (str doc " - satisfiable?"))
+  (is (valid? [:box :e form]) (str doc " - necessitation valid?")))
 
 (defn- is-equiv [form1 form2 doc]
   (is-valid (implies form1 form2) (str doc "(LR)"))
@@ -339,7 +338,9 @@
                        :q) "modus ponens")
     (testing "Basic PAL tests"
       (is (satisfiable? [:! :p :q]))
-      (is-valid [:! :p :p] "Atom invariance"))))
+      (is-valid [:! :p :p] "Atom invariance"))
+    (testing "Moore sentence"
+      (is (satisfiable? [:! [:and :p [:not [:box :a :p]]] [:box :a :p]])))))
 
 (def A :p)
 (def B :q)
