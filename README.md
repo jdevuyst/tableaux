@@ -2,25 +2,25 @@
 
 This Github project contains a Clojure implementation of the 'dynamic' tableau system for public announcement logic that I describe in my forthcoming PhD thesis. I briefly touch on some keywords below. For details and documentation, please see my PhD thesis.
 
-# What's Public Announcement Logic?
+## What's Public Announcement Logic?
 
 Public announcement logic is a logic for reasoning about knowledge and public announcements. Public announcements are a form of learning where all agents simultaneously acquire common knowledge of a particular fact.
 
 Introductory slides by Jan Plaza: http://faculty.plattsburgh.edu/jan.plaza/research/logic/public-slides.pdf
 
-# What are Tablau Systems?
+## What are Tablau Systems?
 
 Tableau systems are formal systems for constructing models that satisfy a given formula. They can also be used for proving theorems on the assumption that a formula is a theorem iff no model can be found (which is the case here).
 
-# What are Dynamic Tableaux?
+## What are Dynamic Tableaux?
 
 In my dissertation I describe tableau systems for various dynamic modal logic, including public announcement logics. These tableau systems have rules that closely mirror the 'dynamic' semantics of dynamic modal logics.
 
-# Status
+## Status
 
 The code works but there's no user-friendly interface yet. I plan to create a modest web-based front-end by January 2014, in time for my defense.
 
-# Usage instructions
+## Usage instructions
 
 To get started, perform the following steps.
 
