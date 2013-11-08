@@ -6,7 +6,7 @@ This Github project contains a Clojure implementation of the 'dynamic' tableau s
 
 Public announcement logic is a logic for reasoning about knowledge and public announcements. Public announcements are a form of learning where all agents simultaneously acquire common knowledge of a particular fact.
 
-Introductory slides by Jan Plaza: http://faculty.plattsburgh.edu/jan.plaza/research/logic/public-slides.pdf
+[Introductory slides by Jan Plaza](http://faculty.plattsburgh.edu/jan.plaza/research/logic/public-slides.pdf)
 
 ## What are Tablau Systems?
 

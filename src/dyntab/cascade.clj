@@ -25,7 +25,7 @@
    (->> [tab]
         (tab/saturate)
         ((fn [[changed tableaux]]
-           (when changed
+           (if changed
              (r/map (fn [new-tab] [t new-tab])
                     tableaux))))
         (r/foldcat)
@@ -53,7 +53,7 @@
    (meta-process
      tab
      [(fn
-        ([] [:pairs-by-first-of-second :!])
+        ([] [:pairs-by-fsecond :!])
         ([cur-tab [n [op form1 form2] :as node-label]]
          (let [new-t (gensym "tableau")]
            (if (-> (bag/query cur-tab [:by-arity 2])
@@ -68,7 +68,7 @@
         ([cur-tab [n form :as node-label]]
          [{nil (->> (bag/query
                       cur-tab
-                      [:pairs-by-first+second-of-second 
+                      [:pairs-by-first-fsecond-fssecond
                        n :! form])
                     (r/mapcat 
                       (fn [[n2 [op form2 form3]]]
@@ -79,7 +79,7 @@
                     (u/foldset))
            t #{node-label}}]))
       (fn
-        ([] [:pairs-by-first+second-of-second :not :!])
+        ([] [:pairs-by-fsecond-fssecond :not :!])
         ([cur-tab [n [op1 [op2 form1 form2]] :as node-label]]
          (let [new-t (gensym "tableau")]
            [{nil #{[new-t]
@@ -127,7 +127,8 @@
           ([] [:by-arity 2])
           ([cur-tab [n form]]
            (->> (bag/query casc
-                           [:triples-by-first-second form t])
+                           [:triples-by-first-second 
+                            form t])
                 (r/map (fn [[precond t1 t2]]
                          {t2 #{[n]}})))))
         (fn ; copy atoms to this tableau
@@ -139,11 +140,11 @@
                 (r/mapcat 
                   #(bag/query
                      (second %)
-                     [:pairs-by-first-of-second nil]))
+                     [:pairs-by-fsecond nil]))
                 (r/filter #(= (first %) n))
                 (r/map (fn [x] {t #{x}})))))
         (fn ; copy atoms to neighboring tableaux
-          ([] [:pairs-by-first-of-second nil])
+          ([] [:pairs-by-fsecond nil])
           ([cur-tab [n atom]]
            (r/map (fn [t2] {t2 #{[n atom]}})
                   (get sync-range n))))

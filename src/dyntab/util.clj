@@ -30,8 +30,7 @@
        (r/reduce conj {})))
 
 (defn fold-empty? [coll]
-  (r/fold 1
-          (fn
+  (r/fold (fn
             ([] true)
             ([left right] (and left right)))
           (constantly false)

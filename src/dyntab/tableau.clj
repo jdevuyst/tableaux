@@ -6,20 +6,20 @@
             [dyntab.syntax :as syntax]))
 
 (defn rule-not-not
-  ([] [:pairs-by-first+second-of-second :not :not])
+  ([] [:pairs-by-fsecond-fssecond :not :not])
   ([tb [n
         [not1 [not2 form]]]]
    [[n form]]))
 
 (defn rule-and
-  ([] [:pairs-by-first-of-second :and])
+  ([] [:pairs-by-fsecond :and])
   ([tb [n
         [and1 form1 form2]]]
    [[n form1]
     [n form2]]))
 
 (defn rule-box1
-  ([] [:pairs-by-first-of-second :box])
+  ([] [:pairs-by-fsecond :box])
   ([tb [n
         [box1 idx form]]]
    (->> (bag/query tb [:triples-by-first-second idx n])
@@ -30,11 +30,12 @@
   ([tb [idx src dest]]
    (->> (bag/query 
           tb 
-          [:pairs-by-first+second-of-second src :box idx])
+          [:pairs-by-first-fsecond-ssecond 
+           src :box idx])
         (r/map (fn [m] [dest (nth (second m) 2)])))))
 
 (defn rule-not-box
-  ([] [:pairs-by-first+second-of-second :not :box])
+  ([] [:pairs-by-fsecond-fssecond :not :box])
   ([tb [n
         [not1 [box1 idx form]]]]
    (if (->> (bag/query tb [:triples-by-first-second idx n])
@@ -71,14 +72,14 @@
         (r/mapcat identity))))
 
 (defn rule-not-and*
-  ([] [:pairs-by-first+second-of-second :not :and])
+  ([] [:pairs-by-fsecond-fssecond :not :and])
   ([tb [n
         [not1 [and1 form1 form2]]]]
    [[[n [:not form1]]
      [n [:not form2]]]]))
 
 (defn rule-precond1*
-  ([] [:pairs-by-first-of-second :!])
+  ([] [:pairs-by-fsecond :!])
   ([tb [n
         [bang1 ann-form post-form]]]
    (->> (bag/query tb [:by-arity 1])
@@ -86,7 +87,7 @@
                  [[n ann-form] [n [:not ann-form]]])))))
 
 (defn rule-precond2*
-  ([] [:pairs-by-first+second-of-second :not :!])
+  ([] [:pairs-by-fsecond-fssecond :not :!])
   ([tb [n
         [not1 [bang1 ann-form post-form]]]]
    (->> (bag/query tb [:by-arity 1])
@@ -96,7 +97,7 @@
 (defn rule-precond3*
   ([] [:by-arity 1])
   ([tb [n]]
-   (->> (bag/query tb [:pairs-by-first-of-second :!])
+   (->> (bag/query tb [:pairs-by-fsecond :!])
         (r/map (fn [[x [ann1 ann-form post-form]]]
                  [[n ann-form] [n [:not ann-form]]])))))
 
@@ -105,7 +106,7 @@
   ([tb [n]]
    (->> (bag/query
           tb
-          [:pairs-by-first+second-of-second :not :!])
+          [:pairs-by-fsecond-fssecond :not :!])
         (r/map (fn [[x [not1 [ann1 ann-form post-form]]]]
                  [[n ann-form] [n [:not ann-form]]])))))
 
@@ -122,9 +123,9 @@
    (-> (bag/tuple-bag
          [bag/index-by-arity
           bag/index-pairs-by-second
-          bag/index-pairs-by-first-of-second
-          bag/index-pairs-by-first+firstsecond-of-second
-          bag/index-pairs-by-first+second-of-second
+          bag/index-pairs-by-fsecond
+          bag/index-pairs-by-first-fsecond-ssecond
+          bag/index-pairs-by-fsecond-fssecond
           bag/index-triples-by-first-second
           bag/index-triples-by-first-third
           bag/index-triples-by-second
@@ -175,8 +176,8 @@
 (defn consistent? [tab]
   (let [not-forms (bag/query
                      tab
-                     [:pairs-by-first-of-second :not])]
-    (->> (bag/query tab [:pairs-by-first-of-second nil])
+                     [:pairs-by-fsecond :not])]
+    (->> (bag/query tab [:pairs-by-fsecond nil])
          (r/filter (fn [[n p]] (get not-forms [n [:not p]])))
          (u/fold-empty?))))
 

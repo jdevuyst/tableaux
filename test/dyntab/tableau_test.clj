@@ -64,15 +64,6 @@
   (is (valid? form) (str doc " - valid?"))
   (is (valid? [:box :e form]) (str doc " - necessitation valid?")))
 
-(defn implies [x y]
-  [:not [:and x [:not y]]])
-
-(defn equiv [x y]
-  [:and (implies x y) (implies y x)])
-
-(defn diamond [idx form]
-  [:not [:box idx [:not form]]])
-
 ;(defmacro defrules [fn-name tb-name queries & body]
 ;  (let [i (atom 0)]
 ;    `(do ~@(for [[q args] queries]
@@ -96,15 +87,15 @@
 
 (deftest tableau-rules
   (testing "Basic tableau rules"
-    (is (= (index-pairs-by-first+firstsecond-of-second '[0 (:not (:not p))])
+    (is (= (index-pairs-by-fsecond-fssecond '[0 (:not (:not p))])
            [(rule-not-not)]))
     (is (= (u/foldset (rule-not-not nil [1 '(:not (:not p))]))
            #{[1 'p]}))
-    (is (= (index-pairs-by-first-of-second '[0 (:and p q)])
+    (is (= (index-pairs-by-fsecond '[0 (:and p q)])
            [(rule-and)]))
     (is (= (u/foldset (rule-and nil [1 '(:and p q)]))
            #{[1 'p] [1 'q]}))
-    (is (= (index-pairs-by-first+firstsecond-of-second '[0 (:not (:and p q))])
+    (is (= (index-pairs-by-fsecond-fssecond '[0 (:not (:and p q))])
            [(rule-not-and*)]))
     (is (= (count (rule-not-and*
                     nil
@@ -119,7 +110,7 @@
            2))
     (is (= (u/foldset (rule-not-and* nil [1 '(:not (:and p q))]))
            #{[[1 '(:not p)] [1 '(:not q)]]}))
-    (is (= (index-pairs-by-first-of-second '[0 (:box p)])
+    (is (= (index-pairs-by-fsecond '[0 (:box p)])
            [(rule-box1)]))
     (is (= (-> (tuple-bag [index-triples-by-first-second])
                (post #{'(a 1 2) '(a 1 3)})
@@ -128,13 +119,11 @@
            #{[2 'p] [3 'p]}))
     (is (= (index-by-arity '[:a 0 1])
            [(rule-box2)]))
-    (is (= (-> (tuple-bag [index-pairs-by-first+second-of-second])
+    (is (= (-> (tuple-bag [index-pairs-by-first-fsecond-ssecond])
                (post #{'(1 (:box a p)) [2]})
                (rule-box2 '(a 1 2))
                u/foldset)
            #{[2 'p]}))
-    (is (= (index-pairs-by-first+firstsecond-of-second '[0 (:not (:box p))])
-           [(rule-not-box)]))
     (is (= (with-redefs [gensym (fn [x] 2)]
                         (-> (tuple-bag [])
                             (rule-not-box [1 '(:not (:box a p))])
@@ -162,44 +151,44 @@
            #{})))
   (testing "Precondition rules"
     (is (= (-> (tuple-bag [index-by-arity
-                           index-pairs-by-first-of-second
-                           index-pairs-by-first+firstsecond-of-second])
+                           index-pairs-by-fsecond
+                           index-pairs-by-first-fsecond-ssecond])
                (post [[0] [1] [2]])
                (rule-precond1* [0 [:! :p]])
                u/foldset)
            (into #{} (for [i [0 1 2]] [[i :p] [i [:not :p]]]))))
     (is (= (-> (tuple-bag [index-by-arity
-                           index-pairs-by-first-of-second
-                           index-pairs-by-first+firstsecond-of-second])
+                           index-pairs-by-fsecond
+                           index-pairs-by-first-fsecond-ssecond])
                (post [[0] [1] [2]])
                (rule-precond2* [0 [:! [:not :p]]])
                u/foldset)
            (into #{} (for [i [0 1 2]] [[i :p] [i [:not :p]]]))))
     (is (= (-> (tuple-bag [index-by-arity
-                           index-pairs-by-first-of-second
-                           index-pairs-by-first+firstsecond-of-second])
+                           index-pairs-by-fsecond
+                           index-pairs-by-first-fsecond-ssecond])
                (post [[0]])
                (rule-precond3* [1])
                u/foldset)
            #{}))
     (is (= (-> (tuple-bag [index-by-arity
-                           index-pairs-by-first-of-second
-                           index-pairs-by-first+firstsecond-of-second])
+                           index-pairs-by-fsecond
+                           index-pairs-by-first-fsecond-ssecond])
                (post [[0 [:! :p :r]] [1 [:! :q :s]] [0] [1]])
                (rule-precond3* [3])
                u/foldset)
            #{[[3 :p] [3 [:not :p]]]
              [[3 :q] [3 [:not :q]]]}))
     (is (= (-> (tuple-bag [index-by-arity
-                           index-pairs-by-first-of-second
-                           index-pairs-by-first+firstsecond-of-second])
+                           index-pairs-by-fsecond
+                           index-pairs-by-first-fsecond-ssecond])
                (post [[0]])
                (rule-precond4* [1])
                u/foldset)
            #{}))
     (is (= (-> (tuple-bag [index-by-arity
-                           index-pairs-by-first-of-second
-                           index-pairs-by-first+firstsecond-of-second])
+                           index-pairs-by-fsecond
+                           index-pairs-by-fsecond-fssecond])
                (post [[0 [:not [:! :p :r]]] [1 [:not [:! :q :s]]] [0] [1]])
                (rule-precond4* [3])
                u/foldset)

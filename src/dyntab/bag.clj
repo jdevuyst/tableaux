@@ -13,7 +13,7 @@
 (defrecord TupleBag [indexers everything newest history])
 
 (defn tuple-bag [indexers]
-  (TupleBag. indexers {} {} '()))
+  (TupleBag. indexers {} {} (list)))
 
 (extend-type TupleBag
   ITupleBag
@@ -73,25 +73,25 @@
     [[:pairs-by-second (second x)]]
     nil))
 
-(defn index-pairs-by-first-of-second [x]
+(defn index-pairs-by-fsecond [x]
   (if (= 2 (count x))
-    [[:pairs-by-first-of-second (nth-or-nil (second x) 0)]]
+    [[:pairs-by-fsecond (nth-or-nil (second x) 0)]]
     nil))
 
-(defn index-pairs-by-first+second-of-second [x]
+(defn index-pairs-by-first-fsecond-ssecond [x]
   (if (= 2 (count x))
     (let [form (second x)]
-      [[:pairs-by-first+second-of-second
+      [[:pairs-by-first-fsecond-ssecond
         (first x)
         (nth-or-nil form 0)
         (nth-or-nil form 1)]])
     nil))
 
-(defn index-pairs-by-first+firstsecond-of-second [x]
+(defn index-pairs-by-fsecond-fssecond [x]
   (if (= 2 (count x))
     (let [outer-form (second x)
           inner-form (nth-or-nil outer-form 1)]
-      [[:pairs-by-first+second-of-second
+      [[:pairs-by-fsecond-fssecond
         (nth-or-nil outer-form 0)
         (nth-or-nil inner-form 0)]])
     nil))

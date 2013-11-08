@@ -18,3 +18,12 @@
     (catch Exception x ; not a coll or empty coll
       (contains? Prop form))))
 
+(defn implies [x y]
+  [:not [:and x [:not y]]])
+
+(defn equiv [x y]
+  [:and (implies x y) (implies y x)])
+
+(defn diamond [idx form]
+  [:not [:box idx [:not form]]])
+
