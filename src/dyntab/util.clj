@@ -33,7 +33,7 @@
   (r/fold (fn
             ([] true)
             ([left right] (and left right)))
-          (constantly false)
+          (constantly (reduced false))
           coll))
 
 (defn foldset [coll]
