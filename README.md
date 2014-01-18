@@ -27,6 +27,6 @@ To get started, perform the following steps.
 
 Among other things, this will test some well-known validities (Hilbert axioms, S5 axioms, PAL reduction axioms). These tests are located at the bottom of [test/dyntab/cascade_test.clj](test/dyntab/cascade_test.clj).
 
-If you're interested in using my theorem prover as a library, you will probably want to look at the bottom of [src/dyntab/cascade.clj](src/dyntab/cascade.clj) and [src/dyntab/syntax.clj](src/dyntab/syntax.clj) first.
+If you're interested in using my theorem prover as a library, you will probably want to look at [src/dyntab/cascade.clj](src/dyntab/cascade.clj) and [src/dyntab/syntax.clj](src/dyntab/syntax.clj) first.
 
 There currently is no end user interface for the theorem prover.
